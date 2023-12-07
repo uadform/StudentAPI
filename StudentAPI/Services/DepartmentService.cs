@@ -19,5 +19,17 @@ namespace StudentAPI.Services
         {
             return await _departmentRepository.GetDepartmentById(departmentId);
         }
+        public async Task<int> CreateDepartmentWithStudentsAndLectures(Departament department, List<Student> students, List<Lecture> lectures)
+        {
+            return await _departmentRepository.CreateDepartmentWithStudentsAndLectures(department, students, lectures);
+        }
+        public async Task<int> AddStudentsToDepartment(int departmentId, List<Student> students)
+        {
+            return await _departmentRepository.AddStudentsToDepartment(departmentId, students);
+        }
+        public async Task<bool> TransferStudent(int studentId, int newDepartmentId)
+        {
+            return await _departmentRepository.TransferStudent(studentId, newDepartmentId);
+        }
     }
 }

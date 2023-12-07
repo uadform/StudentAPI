@@ -20,9 +20,13 @@ namespace StudentAPI.Services
         }
         public async Task<List<Lecture>> GetLecturesByStudentId(int studentId)
         {
-            // Implement logic to retrieve lectures by student using Dapper
             var lectures = await _lectureRepository.GetLecturesByStudentId(studentId);
             return lectures;
         }
+        public async Task<int> CreateLectureAndAddToDepartment(string lectureName, int departmentId)
+        {
+            return await _lectureRepository.CreateLectureAndAddToDepartment(lectureName, departmentId);
+        }
     }
 }
+ 

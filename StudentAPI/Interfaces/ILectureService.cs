@@ -7,5 +7,6 @@ namespace StudentAPI.Interfaces
         public List<Lecture> GetLectures();
         public List<Lecture> GetLecturesByDepartmentId(int departmentId);
         public Task<List<Lecture>> GetLecturesByStudentId(int studentId);
+        Task<int> CreateLectureAndAddToDepartment(string lectureName, int departmentId);
     }
 }

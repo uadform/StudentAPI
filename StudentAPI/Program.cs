@@ -1,8 +1,11 @@
+using DbUp;
 using Npgsql;
+using Serilog;
 using StudentAPI.Interfaces;
 using StudentAPI.Repositories;
 using StudentAPI.Services;
 using System.Data;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,8 +30,23 @@ builder.Services.AddTransient<IDepartmentLectureService, DepartmentLectureServic
 builder.Services.AddTransient<IDepartmentLectureRepository, DepartmentLectureRepository>();
 
 string dbConnectionString = builder.Configuration.GetConnectionString("PostgreConnection");
-builder.Services.AddTransient<IDbConnection>(sp => new NpgsqlConnection(dbConnectionString));
 
+builder.Services.AddTransient<IDbConnection>(sp => new NpgsqlConnection(dbConnectionString));
+var logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .CreateLogger();
+builder.Logging.ClearProviders();
+builder.Logging.AddSerilog(logger);
+
+var upgrader =
+        DeployChanges.To
+            .PostgresqlDatabase(dbConnectionString)
+            .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
+            .LogToNowhere()
+            .Build();
+
+var result = upgrader.PerformUpgrade();
 
 var app = builder.Build();
 
