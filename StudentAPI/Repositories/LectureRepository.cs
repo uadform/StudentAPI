@@ -8,9 +8,11 @@ namespace StudentAPI.Repositories
     public class LectureRepository : ILectureRepository
     {
         private readonly IDbConnection _connection;
-        public LectureRepository(IDbConnection connection)
+        private readonly ILogger<LectureRepository> _logger;
+        public LectureRepository(IDbConnection connection, ILogger<LectureRepository> logger)
         {
             _connection = connection;
+            _logger = logger;
         }
         public List<Lecture> GetLectures()
         {
@@ -19,31 +21,58 @@ namespace StudentAPI.Repositories
         }
         public List<Lecture> GetLecturesByDepartmentId(int departmentId)
         {
-            var lectures = _connection.Query<Lecture>("SELECT LECTURE.lecture_id as LectureId, LECTURE.lecture_name as LectureName FROM LECTURE " +
-                "JOIN DEPARTMENTLECTURE ON LECTURE.lecture_id = DEPARTMENTLECTURE.lecture_id " +
-                "WHERE DEPARTMENTLECTURE.department_id = @DepartmentId", new { DepartmentId = departmentId }).ToList();
-            return lectures;
+            try
+            {
+                var lectures = _connection.Query<Lecture>("SELECT LECTURE.lecture_id as LectureId, LECTURE.lecture_name as LectureName FROM LECTURE " +
+                    "JOIN DEPARTMENTLECTURE ON LECTURE.lecture_id = DEPARTMENTLECTURE.lecture_id " +
+                    "WHERE DEPARTMENTLECTURE.department_id = @DepartmentId", new { DepartmentId = departmentId }).ToList();
+                return lectures;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred in the GetLecturesByDepartmentId method.");
+                throw;
+            }
         }
+
         public async Task<List<Lecture>> GetLecturesByStudentId(int studentId)
         {
-            var lectures = await _connection.QueryAsync<Lecture>("SELECT LECTURE.lecture_id as LectureId, LECTURE.lecture_name as LectureName " +
-                "FROM LECTURE " +
-                "JOIN DEPARTMENTLECTURE ON LECTURE.lecture_id = DEPARTMENTLECTURE.lecture_id " +
-                "JOIN STUDENT ON DEPARTMENTLECTURE.department_id = STUDENT.department_id " +
-                "WHERE STUDENT.student_id = @StudentId", new { StudentId = studentId });
-            return lectures.ToList();
+            try
+            {
+                var lectures = await _connection.QueryAsync<Lecture>("SELECT LECTURE.lecture_id as LectureId, LECTURE.lecture_name as LectureName " +
+                    "FROM LECTURE " +
+                    "JOIN DEPARTMENTLECTURE ON LECTURE.lecture_id = DEPARTMENTLECTURE.lecture_id " +
+                    "JOIN STUDENT ON DEPARTMENTLECTURE.department_id = STUDENT.department_id " +
+                    "WHERE STUDENT.student_id = @StudentId", new { StudentId = studentId });
+                return lectures.ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred in the GetLecturesByStudentId method.");
+                throw;
+            }
         }
+
         public async Task<int> CreateLectureAndAddToDepartment(string lectureName, int departmentId)
         {
-            var lectureId = await _connection.ExecuteScalarAsync<int>("INSERT INTO LECTURE (lecture_name) VALUES (@LectureName) RETURNING lecture_id", new { LectureName = lectureName });
-
-            if (lectureId > 0)
+            try
             {
-                await _connection.ExecuteAsync("INSERT INTO DEPARTMENTLECTURE (department_id, lecture_id) VALUES (@DepartmentId, @LectureId)", new { DepartmentId = departmentId, LectureId = lectureId });
-            }
+                var lectureId = await _connection.ExecuteScalarAsync<int>("INSERT INTO LECTURE (lecture_name) VALUES (@LectureName) RETURNING lecture_id", new { LectureName = lectureName });
 
-            return lectureId;
+                if (lectureId > 0)
+                {
+                    await _connection.ExecuteAsync("INSERT INTO DEPARTMENTLECTURE (department_id, lecture_id) VALUES (@DepartmentId, @LectureId)", new { DepartmentId = departmentId, LectureId = lectureId });
+                }
+
+                return lectureId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred in the CreateLectureAndAddToDepartment method.");
+                throw;
+            }
         }
+
 
     }
 }

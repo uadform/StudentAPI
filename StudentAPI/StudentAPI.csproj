@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTO\" />
+    <Folder Include="Models\DTO\" />
   </ItemGroup>
 
 </Project>

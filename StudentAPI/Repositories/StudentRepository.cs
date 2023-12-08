@@ -8,18 +8,27 @@ namespace StudentAPI.Repositories
     public class StudentRepository : IStudentRepository
     {
         private readonly IDbConnection _connection;
-        public StudentRepository(IDbConnection connection)
+        private readonly ILogger<StudentRepository> _logger;
+        public StudentRepository(IDbConnection connection, ILogger<StudentRepository> logger)
         {
             _connection = connection;
+            _logger = logger;
         }
         public List<Student> GetStudents()
         {
-            var record = _connection.Query<Student>("SELECT student_id as StudentId, student_name as StudentName, department_id as DepartmentId FROM STUDENT").ToList();
-            return record;
+            try
+            {
+                var record = _connection.Query<Student>("SELECT student_id as StudentId, student_name as StudentName, department_id as DepartmentId FROM STUDENT").ToList();
+                return record;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred in the GetStudents method of StudentRepository.");
+                throw;
+            }
         }
         public List<Student> GetStudentsByDepartmentId(int departmentId)
         {
-            // Implement logic to retrieve students by department using Dapper
             var students = _connection.Query<Student>("SELECT student_id as StudentId, student_name as StudentName, department_id as DepartmentId FROM STUDENT WHERE department_id = @DepartmentId", new { DepartmentId = departmentId }).ToList();
             return students;
         }

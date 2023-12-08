@@ -2,15 +2,18 @@
 using StudentAPI.Interfaces;
 using StudentAPI.Models;
 using System.Data;
+using System.Data.Common;
 
 namespace StudentAPI.Repositories
 {
     public class DepartmentRepository : IDepartmentRepository
     {
         private readonly IDbConnection _connection;
-        public DepartmentRepository(IDbConnection connection)
+        private readonly ILogger <DepartmentRepository> _logger;
+        public DepartmentRepository(IDbConnection connection, ILogger<DepartmentRepository> logger)
         {
             _connection = connection;
+            _logger = logger;
         }
 
         public async Task<Departament> GetDepartmentById(int departmentId)
@@ -50,6 +53,37 @@ namespace StudentAPI.Repositories
             }
 
             return students.Count;
+        }
+        public async Task<int> AddLecturesToDepartment(int departmentId, List<Lecture> lectures)
+        {
+            try
+            {
+                foreach (var lecture in lectures)
+                {
+                    var existingRecord = await _connection.QueryFirstOrDefaultAsync<int>(
+                        "SELECT COUNT(*) FROM DEPARTMENTLECTURE WHERE department_id = @DepartmentId AND lecture_id = @LectureId",
+                        new { DepartmentId = departmentId, LectureId = lecture.LectureId });
+
+                    if (existingRecord == 0)
+                    {
+                        await _connection.ExecuteAsync(
+                            "INSERT INTO DEPARTMENTLECTURE (department_id, lecture_id) VALUES (@DepartmentId, @LectureId)",
+                            new { DepartmentId = departmentId, LectureId = lecture.LectureId });
+                    }
+                }
+
+                return lectures.Count;
+            }
+            catch (DbException dbEx)
+            {
+                _logger.LogError(dbEx, "An error occurred in the AddStudentsToDepartment method.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred in the AddStudentsToDepartment method.");
+                throw; 
+            }
         }
         public async Task<bool> TransferStudent(int studentId, int newDepartmentId)
         {
